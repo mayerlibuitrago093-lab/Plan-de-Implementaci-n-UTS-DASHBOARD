@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan de Implementación UTS - Dashboard Interactivo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background-color: #0b0f19; color: #f1f5f9; }
+    .font-mono, .tabular-nums { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+  <!-- Top Bar -->
+  <header class="border-b border-slate-800 bg-[#0f172a]/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-sm">
+          UTS
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-100">Plan de Implementación UTS</h1>
+          <p class="text-xs text-slate-400">Sistema Contable y Pasarelas de Recaudo · Cronograma S1-S8</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.print()" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition">
+          Imprimir / PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+    <!-- KPIs -->
+    <div id="kpi-container" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+    <!-- Toolbar -->
+    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">Prioridad:</span>
+          <select id="filter-priority" onchange="render()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="Todas">Todas</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs text-slate-400">Estado:</span>
+          <select id="filter-status" onchange="render()" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="Todos">Todos</option>
+            <option value="Por iniciar">Por iniciar</option>
+            <option value="En progreso">En progreso</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="bg-slate-800 p-1 rounded-lg border border-slate-700 flex text-xs font-medium">
+          <button id="btn-view-table" onclick="setView('table')" class="px-3 py-1 rounded-md bg-emerald-600 text-white">Tabla</button>
+          <button id="btn-view-gantt" onclick="setView('gantt')" class="px-3 py-1 rounded-md text-slate-400 hover:text-slate-200">Cronograma S1-S8</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor Principal de Vista -->
+    <div id="view-content" class="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-xl"></div>
+  </main>
+
+  <script>
+    let activities = [
+  {
+    "id": 1,
+    "priority": "Alta",
+    "task": "Levantamiento de especificaciones técnicas y marco normativo contable Institucional (RF-05)",
+    "responsible": "Analista Funcional / Contabilidad UTS",
+    "dependency": "Ninguna",
+    "duration": 1,
+    "status": "Por iniciar",
+    "phase": "1-Análisis"
+  },
+  {
+    "id": 2,
+    "priority": "Alta",
+    "task": "Aprovisionamiento y configuración de infraestructura en la nube y servidor API Gateway",
+    "responsible": "Ingeniero DevOps / Proveedor Cloud",
+    "dependency": "Ninguna",
+    "duration": 1,
+    "status": "Por iniciar",
+    "phase": "2-Instalación"
+  },
+  {
+    "id": 3,
+    "priority": "Media",
+    "task": "Configuración de pasarelas de pago y convenios bancarios de recaudo (ePayco / Bancos)",
+    "responsible": "Desarrollador Backend / ePayco",
+    "dependency": "Tarea 2",
+    "duration": 2,
+    "status": "Por iniciar",
+    "phase": "4-Configuración"
+  },
+  {
+    "id": 4,
+    "priority": "Alta",
+    "task": "Desarrollo de microservicios y exposición de endpoints seguros RESTful para cobros y pagos",
+    "responsible": "Equipo de Desarrollo Backend",
+    "dependency": "Tareas 1, 2",
+    "duration": 3,
+    "status": "Por iniciar",
+    "phase": "3-Migración"
+  },
+  {
+    "id": 5,
+    "priority": "Alta",
+    "task": "Implementación del motor de validación de reglas contables y trazabilidad por logs de auditoría",
+    "responsible": "Desarrollador Backend",
+    "dependency": "Tarea 4",
+    "duration": 2,
+    "status": "Por iniciar",
+    "phase": "4-Configuración"
+  },
+  {
+    "id": 6,
+    "priority": "Alta",
+    "task": "Pruebas de compatibilidad de APIs, validación de cargas y mitigación de fallas técnicas (Riesgo R1)",
+    "responsible": "Ingeniero QA / Equipo TI UTS",
+    "dependency": "Tareas 3, 4, 5",
+    "duration": 2,
+    "status": "Por iniciar",
+    "phase": "5-Pruebas"
+  },
+  {
+    "id": 7,
+    "priority": "Media",
+    "task": "Elaboración de manuales técnicos de integración de endpoints y documentación de arquitectura",
+    "responsible": "Desarrollador / Documentador Técnico",
+    "dependency": "Tareas 4, 6",
+    "duration": 1,
+    "status": "Por iniciar",
+    "phase": "6-Capacitación"
+  },
+  {
+    "id": 8,
+    "priority": "Media",
+    "task": "Reuniones de sincronización y validación de despliegue con la Dirección de TI de la UTS",
+    "responsible": "Líder Técnico / Equipo TI UTS",
+    "dependency": "Tareas 6, 7",
+    "duration": 1,
+    "status": "Por iniciar",
+    "phase": "7-Go-Live"
+  }
+];
+    let currentView = 'table';
+
+    function setView(mode) {
+      currentView = mode;
+      document.getElementById('btn-view-table').className = mode === 'table' ? 'px-3 py-1 rounded-md bg-emerald-600 text-white' : 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200';
+      document.getElementById('btn-view-gantt').className = mode === 'gantt' ? 'px-3 py-1 rounded-md bg-emerald-600 text-white' : 'px-3 py-1 rounded-md text-slate-400 hover:text-slate-200';
+      render();
+    }
+
+    function calculateSchedule() {
+      const endMap = {};
+      const startMap = {};
+      for (let iter = 0; iter < 10; iter++) {
+        let changed = false;
+        activities.forEach(act => {
+          let start = 1;
+          if (act.dependency && act.dependency.toLowerCase() !== 'ninguna') {
+            const matches = act.dependency.match(/\d+/g);
+            if (matches && matches.length) {
+              const ends = matches.map(id => endMap[id] || 1);
+              start = Math.max(1, Math.max(...ends) + 1);
+            }
+          }
+          const end = start + Math.max(1, act.duration) - 1;
+          if (startMap[act.id] !== start || endMap[act.id] !== end) {
+            startMap[act.id] = start;
+            endMap[act.id] = end;
+            changed = true;
+          }
+        });
+        if (!changed) break;
+      }
+      return activities.map(act => ({
+        ...act,
+        startWeek: startMap[act.id] || 1,
+        endWeek: endMap[act.id] || ((startMap[act.id] || 1) + act.duration - 1)
+      }));
+    }
+
+    function modifyDuration(id, delta) {
+      activities = activities.map(a => a.id === id ? { ...a, duration: Math.max(1, Math.min(8, a.duration + delta)) } : a);
+      render();
+    }
+
+    function changeStatus(id, newStatus) {
+      activities = activities.map(a => a.id === id ? { ...a, status: newStatus } : a);
+      render();
+    }
+
+    function deleteTask(id) {
+      if (confirm('¿Confirmas la eliminación de la Tarea ' + id + '?')) {
+        activities = activities.filter(a => a.id !== id);
+        render();
+      }
+    }
+
+    function render() {
+      const scheduled = calculateSchedule();
+      const priorityFilter = document.getElementById('filter-priority').value;
+      const statusFilter = document.getElementById('filter-status').value;
+
+      const filtered = scheduled.filter(a => 
+        (priorityFilter === 'Todas' || a.priority === priorityFilter) &&
+        (statusFilter === 'Todos' || a.status === statusFilter)
+      );
+
+      // Render KPIs
+      const total = activities.length;
+      const high = activities.filter(a => a.priority === 'Alta').length;
+      let totalW = 0, earnedW = 0;
+      activities.forEach(a => {
+        totalW += a.duration;
+        if (a.status === 'Completado') earnedW += a.duration;
+        else if (a.status === 'En progreso') earnedW += a.duration * 0.5;
+      });
+      const progress = totalW > 0 ? Math.round((earnedW / totalW) * 100) : 0;
+      const totalDur = activities.reduce((acc, c) => acc + c.duration, 0);
+
+      document.getElementById('kpi-container').innerHTML = `
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <p class="text-xs text-slate-400 font-medium">Tareas Activas</p>
+          <p class="text-2xl font-bold font-mono text-white mt-1">${total}</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <p class="text-xs text-rose-400 font-medium">Prioridad Alta</p>
+          <p class="text-2xl font-bold font-mono text-rose-300 mt-1">${high}</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <p class="text-xs text-slate-400 font-medium">Semanas Totales</p>
+          <p class="text-2xl font-bold font-mono text-white mt-1">${totalDur} <span class="text-xs font-normal text-slate-500">sem</span></p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+          <p class="text-xs text-emerald-400 font-medium">Progreso Global</p>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span class="text-2xl font-bold font-mono text-emerald-300">${progress}%</span>
+          </div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div class="bg-emerald-500 h-full transition-all" style="width: ${progress}%"></div>
+          </div>
+        </div>
+      `;
+
+      // Render View
+      const container = document.getElementById('view-content');
+      if (currentView === 'table') {
+        container.innerHTML = `
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-950/60 text-slate-400 text-xs font-semibold uppercase tracking-wider border-b border-slate-800">
+                <tr>
+                  <th class="px-4 py-3">ID</th>
+                  <th class="px-4 py-3">Actividad</th>
+                  <th class="px-4 py-3">Responsable</th>
+                  <th class="px-4 py-3">Fase</th>
+                  <th class="px-4 py-3">Dependencia</th>
+                  <th class="px-4 py-3">Prioridad</th>
+                  <th class="px-4 py-3 text-center">Duración</th>
+                  <th class="px-4 py-3">Estado</th>
+                  <th class="px-4 py-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60">
+                ${filtered.map(a => `
+                  <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-4 py-3.5 font-mono text-xs font-medium text-emerald-400">#${a.id}</td>
+                    <td class="px-4 py-3.5 font-medium text-slate-200 max-w-xs">${a.task}</td>
+                    <td class="px-4 py-3.5 text-xs text-slate-400">${a.responsible}</td>
+                    <td class="px-4 py-3.5 text-xs text-slate-400">${a.phase}</td>
+                    <td class="px-4 py-3.5 text-xs text-slate-400 font-mono">${a.dependency}</td>
+                    <td class="px-4 py-3.5">
+                      <span class="${a.priority === 'Alta' ? 'text-rose-400' : 'text-amber-400'} text-xs font-semibold">
+                        ${a.priority}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3.5">
+                      <div class="flex items-center justify-center gap-1.5">
+                        <button onclick="modifyDuration(${a.id}, -1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">-</button>
+                        <span class="font-mono text-xs font-bold text-slate-100 w-8 text-center">${a.duration}s</span>
+                        <button onclick="modifyDuration(${a.id}, 1)" class="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold flex items-center justify-center">+</button>
+                      </div>
+                    </td>
+                    <td class="px-4 py-3.5">
+                      <select onchange="changeStatus(${a.id}, this.value)" class="bg-slate-800/80 border border-slate-700 text-xs rounded-md px-2 py-1 text-slate-200 focus:outline-none">
+                        <option value="Por iniciar" ${a.status === 'Por iniciar' ? 'selected' : ''}>Por iniciar</option>
+                        <option value="En progreso" ${a.status === 'En progreso' ? 'selected' : ''}>En progreso</option>
+                        <option value="Completado" ${a.status === 'Completado' ? 'selected' : ''}>Completado</option>
+                      </select>
+                    </td>
+                    <td class="px-4 py-3.5 text-right">
+                      <button onclick="deleteTask(${a.id})" class="text-rose-400 hover:text-rose-300 px-2 py-1 rounded hover:bg-rose-500/10 transition">
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="p-4 space-y-4">
+            <div class="grid grid-cols-12 gap-2 text-xs font-mono text-slate-400 border-b border-slate-800 pb-2">
+              <div class="col-span-4 font-semibold text-slate-200">Actividad</div>
+              <div class="col-span-1 text-center">S1</div>
+              <div class="col-span-1 text-center">S2</div>
+              <div class="col-span-1 text-center">S3</div>
+              <div class="col-span-1 text-center">S4</div>
+              <div class="col-span-1 text-center">S5</div>
+              <div class="col-span-1 text-center">S6</div>
+              <div class="col-span-1 text-center">S7</div>
+              <div class="col-span-1 text-center">S8</div>
+            </div>
+            <div class="space-y-3">
+              ${filtered.map(a => {
+                const s = Math.min(8, Math.max(1, a.startWeek));
+                const e = Math.min(8, Math.max(1, a.endWeek));
+                const leftPercent = ((s - 1) / 8) * 100;
+                const widthPercent = (Math.max(1, (e - s + 1)) / 8) * 100;
+                const bg = a.status === 'Completado' ? 'bg-emerald-500' : a.status === 'En progreso' ? 'bg-amber-500' : 'bg-cyan-600';
+                return `
+                  <div class="grid grid-cols-12 gap-2 items-center py-1">
+                    <div class="col-span-4 truncate text-xs text-slate-200 font-medium">
+                      <span class="text-emerald-400 font-mono mr-1">#${a.id}</span> ${a.task}
+                    </div>
+                    <div class="col-span-8 bg-slate-800/40 h-7 rounded relative flex items-center">
+                      <div class="${bg} h-5 rounded px-2 text-[10px] font-mono text-white flex items-center font-bold absolute"
+                           style="left: ${leftPercent}%; width: ${widthPercent}%;">
+                        S${s}-S${e} (${a.duration}s)
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
